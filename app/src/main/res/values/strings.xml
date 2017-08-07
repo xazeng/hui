@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">hui</string>
+    <string name="exit_hint">Click BACK again to EXIT.</string>
+    <string name="home_url">http://store.xazeng.com/app/hui/</string>
+    <string name="web_error_info"><![CDATA[<p>Error Code: %1$d<br/>Error Info: %2$s</p><br/><p><b>Please check you network, then click refresh button on the top right corner.</b></p>]]></string>
+    <string name="share_title">Share with your friends</string>
+</resources>
