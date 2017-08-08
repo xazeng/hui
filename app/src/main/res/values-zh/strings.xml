@@ -2,4 +2,10 @@
 <resources>
     <string name="app_name">优惠助手</string>
     <string name="exit_hint">再按一次退出</string>
+    <string name="home_url">http://store.xazeng.com/app/hui/</string>
+    <string name="web_error_info"><![CDATA[<p>错误码: %1$d<br/>错误信息: %2$s</p><br/><p><b>请开启您的网络，然后点击右上方的刷新按钮。</b></p>]]></string>
+    <string name="share_title">分享给你的朋友们</string>
+    <string name="web_title_loading">加载中...</string>
+    <string name="active_external_app_note">即将打开外部应用</string>
+    <string name="active_external_app_confirm">是否允许？</string>
 </resources>

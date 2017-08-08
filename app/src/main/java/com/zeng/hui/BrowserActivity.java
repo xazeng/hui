@@ -1,10 +1,12 @@
 package com.zeng.hui;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Handler;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.KeyEvent;
@@ -12,6 +14,7 @@ import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 
@@ -20,9 +23,7 @@ import com.zeng.hui.databinding.ActivityBrowserBinding;
 public class BrowserActivity extends AppCompatActivity {
 
     private ActivityBrowserBinding mBinding = null;
-    private boolean mWebError = false;
     private boolean mMasterMode = false;
-    private boolean mGoBackIng = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +34,6 @@ public class BrowserActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 if (mBinding.webView.canGoBack()) {
-                    mGoBackIng = true;
                     mBinding.webView.goBack();
                 } else {
                     finish();
@@ -49,7 +49,6 @@ public class BrowserActivity extends AppCompatActivity {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN){
             if (mBinding.webView.canGoBack()) {
-                mGoBackIng = true;
                 mBinding.webView.goBack();
             } else {
                 finish();
@@ -57,6 +56,13 @@ public class BrowserActivity extends AppCompatActivity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mBinding.webView.removeAllViews();
+        mBinding.webView.destroy();
     }
 
     private void initToolbar(){
@@ -74,8 +80,6 @@ public class BrowserActivity extends AppCompatActivity {
         mBinding.refreshImageView.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
-                mWebError = false;
-                mGoBackIng = false;
                 mBinding.webView.loadUrl(mBinding.webView.getUrl());
             }
         });
@@ -89,8 +93,13 @@ public class BrowserActivity extends AppCompatActivity {
     }
 
     private void initWebView(){
-        mBinding.webView.getSettings().setJavaScriptEnabled(true);
-        mBinding.webView.getSettings().setDefaultTextEncodingName("utf8");
+        WebSettings settings = mBinding.webView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        settings.setDefaultTextEncodingName("utf8");
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setDisplayZoomControls(false);
+
         mBinding.webView.setHorizontalScrollBarEnabled(false);
         mBinding.webView.setWebChromeClient(new WebChromeClient(){
             @Override
@@ -108,14 +117,6 @@ public class BrowserActivity extends AppCompatActivity {
                     mBinding.progressBar.setVisibility(View.VISIBLE);
                 }
             }
-
-            @Override
-            public void onReceivedTitle(WebView view, String title) {
-                super.onReceivedTitle(view, title);
-                if (!mWebError) {
-                    mBinding.titleTextView.setText(title);
-                }
-            }
         });
         mBinding.webView.setWebViewClient(new WebViewClient(){
             @Override
@@ -126,14 +127,24 @@ public class BrowserActivity extends AppCompatActivity {
                         intent.putExtra("url", url);
                         startActivity(intent);
                     } else {
-                        mBinding.titleTextView.setText(url);
-                        mGoBackIng = false;
                         view.loadUrl(url);
                     }
                 } else {
                     try {
-                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        startActivity(intent);
+                        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        if (getPackageManager().resolveActivity(intent, 0) != null) {
+                            new AlertDialog.Builder(BrowserActivity.this)
+                                    .setTitle(R.string.active_external_app_note)
+                                    .setMessage(R.string.active_external_app_confirm)
+                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialogInterface, int i) {
+                                            startActivity(intent);
+                                        }
+                                    })
+                                    .setNegativeButton(android.R.string.cancel, null)
+                                    .show();
+                        }
                     } catch (android.content.ActivityNotFoundException anfe) {
                     }
                 }
@@ -143,23 +154,18 @@ public class BrowserActivity extends AppCompatActivity {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
-                if (mGoBackIng) {
-                    mBinding.titleTextView.setText(url);
-                }
+                mBinding.titleTextView.setText(R.string.web_title_loading);
             }
 
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
-                if (mGoBackIng) {
-                    mBinding.titleTextView.setText(view.getTitle());
-                }
+                mBinding.titleTextView.setText(view.getTitle());
             }
 
             @Override
             public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
                 super.onReceivedError(view, errorCode, description, failingUrl);
-                mWebError = true;
                 view.loadData(String.format(getString(R.string.web_error_info), errorCode, description), "text/html", "utf8");
             }
         });
@@ -170,10 +176,9 @@ public class BrowserActivity extends AppCompatActivity {
             }
         });
 
-        mBinding.webView.addJavascriptInterface(new JsInterface(), "hui");
+        mBinding.webView.addJavascriptInterface(new JsInterface(), "ajs");
 
         String url = getIntent().getStringExtra("url");
-        mBinding.titleTextView.setText(url);
         mBinding.webView.loadUrl(url);
     }
 
