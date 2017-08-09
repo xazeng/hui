@@ -5,6 +5,5 @@
     <string name="web_error_info"><![CDATA[<p>Error Code: %1$d<br/>Error Info: %2$s</p><br/><p><b>Please check you network, then click refresh button on the top right corner.</b></p>]]></string>
     <string name="share_title">Share with your friends</string>
     <string name="web_title_loading">loading...</string>
-    <string name="active_external_app_note">Gonna active a external app.</string>
-    <string name="active_external_app_confirm">Are you sure?</string>
+    <string name="active_external_app_note">Gonna active [%1$s].</string>
 </resources>

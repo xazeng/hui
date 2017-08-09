@@ -2,8 +2,11 @@ package com.zeng.hui;
 
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.v7.app.AlertDialog;
@@ -132,17 +135,20 @@ public class BrowserActivity extends AppCompatActivity {
                 } else {
                     try {
                         final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        if (getPackageManager().resolveActivity(intent, 0) != null) {
+                        PackageManager pkM = getPackageManager();
+                        ResolveInfo info = pkM.resolveActivity(intent, 0);
+                        if (info != null) {
+                            String appName = pkM.getApplicationLabel(info.activityInfo.applicationInfo).toString();
+                            Drawable appIcon = pkM.getApplicationIcon(info.activityInfo.applicationInfo);
                             new AlertDialog.Builder(BrowserActivity.this)
-                                    .setTitle(R.string.active_external_app_note)
-                                    .setMessage(R.string.active_external_app_confirm)
+                                    .setIcon(appIcon)
+                                    .setTitle(String.format(getString(R.string.active_external_app_note), appName))
                                     .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                                         @Override
                                         public void onClick(DialogInterface dialogInterface, int i) {
                                             startActivity(intent);
                                         }
                                     })
-                                    .setNegativeButton(android.R.string.cancel, null)
                                     .show();
                         }
                     } catch (android.content.ActivityNotFoundException anfe) {
@@ -208,6 +214,22 @@ public class BrowserActivity extends AppCompatActivity {
                     }
                 }
             });
+        }
+
+        @JavascriptInterface
+        public String getVersionName() {
+            String versionName = "";
+            try {
+                versionName = BrowserActivity.this.getPackageManager().getPackageInfo(BrowserActivity.this.getPackageName(), 0).versionName;
+            } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            }
+
+            return versionName;
+        }
+
+        @JavascriptInterface
+        public String getPackageName() {
+            return BrowserActivity.this.getPackageName();
         }
 
         @JavascriptInterface
