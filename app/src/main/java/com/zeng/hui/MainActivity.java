@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.webkit.DownloadListener;
 import android.webkit.JavascriptInterface;
 import android.webkit.URLUtil;
 import android.webkit.WebChromeClient;
@@ -151,25 +152,24 @@ public class MainActivity extends AppCompatActivity {
                     intent.putExtra("url", url);
                     startActivity(intent);
                 } else {
-                    try {
-                        final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                        PackageManager pkM = getPackageManager();
-                        ResolveInfo info = pkM.resolveActivity(intent, 0);
-                        if (info != null) {
-                            String appName = pkM.getApplicationLabel(info.activityInfo.applicationInfo).toString();
-                            Drawable appIcon = pkM.getApplicationIcon(info.activityInfo.applicationInfo);
-                            new AlertDialog.Builder(MainActivity.this)
-                                    .setIcon(appIcon)
-                                    .setTitle(String.format(getString(R.string.active_external_app_note), appName))
-                                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialogInterface, int i) {
-                                            startActivity(intent);
-                                        }
-                                    })
-                                    .show();
-                        }
-                    } catch (android.content.ActivityNotFoundException anfe) {
+                    final Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    PackageManager pkM = getPackageManager();
+                    ResolveInfo info = pkM.resolveActivity(intent, 0);
+                    if (info != null) {
+                        String appName = pkM.getApplicationLabel(info.activityInfo.applicationInfo).toString();
+                        Drawable appIcon = pkM.getApplicationIcon(info.activityInfo.applicationInfo);
+                        new AlertDialog.Builder(MainActivity.this)
+                                .setIcon(appIcon)
+                                .setTitle(String.format(getString(R.string.active_external_app_note), appName))
+                                .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                    @Override
+                                    public void onClick(DialogInterface dialogInterface, int i) {
+                                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                                | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                                        startActivity(intent);
+                                    }
+                                })
+                                .show();
                     }
                 }
                 return true;
@@ -199,6 +199,17 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+        mBinding.webView.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String s, String s1, String s2, String s3, long l) {
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(s));
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                            | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                    startActivity(intent);
+                }catch (android.content.ActivityNotFoundException anfe){}
+            }
+        });
 
         mBinding.webView.addJavascriptInterface(new JsInterface(), "ajs");
 
@@ -226,7 +237,10 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
+                                | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                        startActivity(intent);
                     } catch (android.content.ActivityNotFoundException anfe) {
                     }
                 }
